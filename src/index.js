@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import express from 'express';
 import bodyParser from 'body-parser';
+import cors from 'cors';
 
 import db from './config/db/connect.js';
 import routes from './routes/index.js';
@@ -8,6 +9,8 @@ import routes from './routes/index.js';
 dotenv.config();
 
 const app = express();
+
+app.use(cors());
 
 //Connect to database
 db.connect();

@@ -2,15 +2,18 @@ import Product from '../models/Product.js';
 
 class ProductController {
     async createProduct(req, res, next) {
+        const { name, image, type, price, countInStock, rating, description } =
+            req.body;
+
         try {
             const result = await Product.create({
-                name: 'Whey Protein',
-                image: 'Images/Whey',
-                type: 'Hydrolyzed',
-                price: 1500000,
-                countInStock: 2,
-                rating: 5,
-                description: 'Very good',
+                name,
+                image,
+                type,
+                price,
+                countInStock,
+                rating,
+                description,
             });
             return res.json(result);
         } catch (error) {
