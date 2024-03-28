@@ -1,59 +1,16 @@
 import User from '../models/User.js';
+import validateUserData from '../utils/validateUserData.js';
 
 class UserController {
     async createUser(req, res, next) {
         try {
-            const { email, password, confirmPassword, fullname, phone } =
-                req.body;
-
-            // Check if any required field is empty
-            if (
-                !email ||
-                !password ||
-                !confirmPassword ||
-                !fullname ||
-                !phone
-            ) {
-                return res.status(400).json({
-                    message: 'Vui lòng nhập đầy đủ thông tin',
-                });
-            }
-
-            // Check email format
-            const emailRegex =
-                /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-            const isCheckEmail = emailRegex.test(email);
-            if (!isCheckEmail) {
-                return res.status(400).json({
-                    message: 'Email không hợp lệ',
-                });
-            }
-
-            // Check if email or phone already exists
-            const existingEmail = await User.findOne({ email });
-            const existingPhone = await User.findOne({ phone });
-            if (existingEmail) {
-                return res.status(400).json({
-                    message: 'Email đã tồn tại ',
-                });
-            } else if (existingPhone) {
-                return res.status(400).json({
-                    message: 'Số điện thoại đã tồn tại ',
-                });
-            } else if (password !== confirmPassword) {
-                return res.status(400).json({
-                    message: 'Mật khẩu không trùng khớp',
-                });
+            const errors = await validateUserData(req.body);
+            if (errors.length > 0) {
+                return res.status(400).json({ message: errors[0] });
             }
 
             // Create new user
-            const result = await User.create({
-                email,
-                password,
-                confirmPassword,
-                fullname,
-                phone,
-            });
+            const result = await User.create(req.body);
             return res.json({
                 message: 'Tạo tài khoản thành công',
                 data: result,
