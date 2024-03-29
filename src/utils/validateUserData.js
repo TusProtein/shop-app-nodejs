@@ -2,29 +2,54 @@ import User from '../models/User.js';
 
 const validateUserData = async (data) => {
     const { email, password, confirmPassword, fullname, phone } = data;
+
     const errors = [];
-    // Check if any required field is empty
-    if (!email || !password || !confirmPassword || !fullname || !phone) {
-        errors.push('Vui lòng nhập đầy đủ thông tin');
-    }
 
-    // Check email format
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    const isCheckEmail = emailRegex.test(email);
-    if (!isCheckEmail) {
-        errors.push('Email không hợp lệ');
-    }
+    const phoneRegex = /^\+?(84|0\d{1,3})?\d{9,10}$/;
 
-    // Check if email or phone already exists
-    const existingEmail = await User.findOne({ email });
-    const existingPhone = await User.findOne({ phone });
-    if (existingEmail) {
-        errors.push('Email đã tồn tại');
-    } else if (existingPhone) {
-        errors.push('Số điện thoại đã tồn tại');
-    } else if (password !== confirmPassword) {
-        errors.push('Mật khẩu không trùng khớp');
-    }
+    const validations = [
+        {
+            condition:
+                !email || !password || !confirmPassword || !fullname || !phone,
+            message: 'Vui lòng nhập đầy đủ thông tin',
+        },
+        {
+            condition: fullname.length < 6,
+            message: 'Họ và tên phải lớn hơn 6 ký tự',
+        },
+        {
+            condition: !emailRegex.test(email),
+            message: 'Email không hợp lệ',
+        },
+        {
+            condition: await User.findOne({ email }),
+            message: 'Email đã tồn tại',
+        },
+        {
+            condition: !phoneRegex.test(phone) || isNaN(phone),
+            message: 'Số điện thoại không hợp lệ',
+        },
+        {
+            condition: await User.findOne({ phone }),
+            message: 'Số điện thoại đã tồn tại',
+        },
+        {
+            condition: password !== confirmPassword,
+            message: 'Mật khẩu không trùng khớp',
+        },
+
+        {
+            condition: password.length < 6,
+            message: 'Mật khẩu phải lớn hơn 6 ký tự',
+        },
+    ];
+
+    validations.forEach((validation) => {
+        if (validation.condition) {
+            errors.push(validation.message);
+        }
+    });
 
     return errors;
 };
