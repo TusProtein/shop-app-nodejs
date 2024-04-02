@@ -2,20 +2,37 @@ import User from '../models/User.js';
 import validateUserData from '../utils/validateUserData.js';
 import bcrypt from 'bcrypt';
 import generateJWT from '../utils/generateJWT.js';
+import formattedDateOfBirth from '../utils/formattedDateOfBirth.js';
 
 class UserController {
     async createUser(req, res, next) {
-        const password = req.body.password;
         try {
+            const { password, dateOfBirth } = req.body;
+
+            // //Validate Date of Birth
+            const formatted = formattedDateOfBirth(dateOfBirth);
+
+            if (!formatted) {
+                return res.status(400).json({
+                    message: 'Ngày sinh không hợp lệ',
+                });
+            }
+
+            // //Errors array
             const errors = await validateUserData(req.body);
-            if (errors.length > 0) {
+
+            if (errors && errors?.length > 0) {
                 return res.status(400).json({ message: errors[0] });
             }
 
             const hash = bcrypt.hashSync(password, 10);
 
             // Create new user
-            const result = await User.create({ ...req.body, password: hash });
+            const result = await User.create({
+                ...req.body,
+                password: hash,
+                dateOfBirth: formatted,
+            });
             return res.json({
                 message: 'Tạo tài khoản thành công',
                 data: result,
@@ -34,6 +51,12 @@ class UserController {
 
             const user = await User.findOne({ email });
             const comparePassword = bcrypt.compareSync(password, user.password);
+
+            if (!user) {
+                return res.status(400).json({
+                    message: 'Người dùng không tồn tại',
+                });
+            }
 
             if (!comparePassword) {
                 return res.status(400).json({
@@ -71,21 +94,46 @@ class UserController {
         }
     }
 
+    //update Profile (phone, email, date of birth) /:id
     async updateUser(req, res, next) {
         try {
+            const { password, dateOfBirth } = req.body;
+
+            // //Validate Date of Birth
+            const formatted = formattedDateOfBirth(dateOfBirth);
+            if (!formatted) {
+                return res.status(400).json({
+                    message: 'Ngày sinh không hợp lệ',
+                });
+            }
+
+            const hash = bcrypt.hashSync(password, 10);
+
+            const data = {
+                ...req.body,
+                password: hash,
+                dateOfBirth: formatted,
+            };
+
             const updateUser = await User.findByIdAndUpdate(
                 {
                     _id: req.params.id,
                 },
-                req.body,
+                data,
                 { new: true }
             );
+
             if (!updateUser) {
-                return res.status(404).json({ error: 'User not found' });
+                return res.status(400).json({
+                    message: 'Người dùng không tồn tại',
+                });
             }
             return res.json(updateUser);
         } catch (error) {
             console.log(error);
+            return res.status(400).json({
+                message: 'Cập nhật thất bại',
+            });
         }
     }
 

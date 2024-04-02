@@ -7,7 +7,7 @@ const UserSchema = new Schema(
         email: { type: String, required: true, unique: true },
         phone: { type: String, required: true },
         password: { type: String, required: true },
-        // confirmPassword: { type: String, required: true },
+        dateOfBirth: { type: Date, required: true },
         isAdmin: { type: Boolean, required: true, default: false },
         address: { type: String },
         avatar: { type: String },

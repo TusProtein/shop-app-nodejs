@@ -11,7 +11,7 @@ const validateUserData = async (data) => {
     const validations = [
         {
             condition:
-                !email || !password || !confirmPassword || !fullname || !phone,
+                !fullname || !email || !password || !confirmPassword || !phone,
             message: 'Vui lòng nhập đầy đủ thông tin',
         },
         {
