@@ -48,15 +48,18 @@ class UserController {
     async loginUser(req, res, next) {
         try {
             const { email, password } = req.body;
+            const oneWeek = 3600000 * 24 * 7;
 
+            // console.log(req.userData);
             const user = await User.findOne({ email });
-            const comparePassword = bcrypt.compareSync(password, user.password);
 
             if (!user) {
                 return res.status(400).json({
                     message: 'Người dùng không tồn tại',
                 });
             }
+
+            const comparePassword = bcrypt.compareSync(password, user.password);
 
             if (!comparePassword) {
                 return res.status(400).json({
@@ -71,6 +74,12 @@ class UserController {
 
             const access_token = tokens.access_token;
             const refresh_token = tokens.refresh_token;
+
+            res.cookie('token', access_token, {
+                maxAge: oneWeek,
+                secure: true,
+                httpOnly: true,
+            });
 
             return res.json({
                 message: 'Đăng nhập thành công',
@@ -87,8 +96,21 @@ class UserController {
 
     async getUser(req, res, next) {
         try {
-            const result = await User.find({});
-            return res.json(result);
+            const user = await User.find({});
+
+            return res.json(user);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    // getDetailUser/:id
+    async getDetailUser(req, res, next) {
+        try {
+            const id = req.params.id;
+            const user = await User.find({ _id: id });
+
+            return res.json(user);
         } catch (error) {
             console.log(error);
         }
