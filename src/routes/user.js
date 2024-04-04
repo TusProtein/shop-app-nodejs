@@ -10,5 +10,6 @@ router.get('/getUser', checkRole, UserController.getUser);
 router.get('/getDetailUser/:id', checkRole, UserController.getDetailUser);
 router.delete('/:id', checkRole, UserController.deleteUser);
 router.put('/:id', UserController.updateUser);
+router.post('/refreshToken', UserController.refreshToken);
 
 export default router;

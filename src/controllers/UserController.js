@@ -1,3 +1,5 @@
+import jwt from 'jsonwebtoken';
+
 import User from '../models/User.js';
 import validateUserData from '../utils/validateUserData.js';
 import bcrypt from 'bcrypt';
@@ -68,8 +70,8 @@ class UserController {
             }
 
             const tokens = generateJWT({
-                id: user._id,
-                isAdmin: user.isAdmin,
+                id: user?._id,
+                isAdmin: user?.isAdmin,
             });
 
             const access_token = tokens.access_token;
@@ -77,6 +79,12 @@ class UserController {
 
             res.cookie('token', access_token, {
                 maxAge: oneWeek,
+                secure: true,
+                httpOnly: true,
+            });
+
+            res.cookie('refresh_token', refresh_token, {
+                maxAge: 365 * 24 * 60 * 60 * 1000, // 1 năm
                 secure: true,
                 httpOnly: true,
             });
@@ -170,6 +178,36 @@ class UserController {
             return res.json('Delete successful');
         } catch (error) {
             console.log(error);
+        }
+    }
+
+    async refreshToken(req, res, next) {
+        try {
+            const token = req.cookies.refresh_token;
+
+            const dataUser = jwt.verify(token, process.env.REFRESH_TOKEN);
+
+            if (!dataUser) {
+                return res
+                    .status(400)
+                    .json({ message: 'Người dùng không hợp lệ' });
+            }
+
+            const tokens = generateJWT({
+                id: dataUser?.id,
+                isAdmin: dataUser?.isAdmin,
+            });
+
+            const new_access_token = tokens.access_token;
+            res.status(200).json({
+                message: 'Refresh token thành công',
+                new_access_token,
+            });
+        } catch (error) {
+            console.log(error);
+            res.status(404).json({
+                message: 'RefreshToken không hợp lệ',
+            });
         }
     }
 }
