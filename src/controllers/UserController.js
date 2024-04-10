@@ -5,6 +5,7 @@ import validateUserData from '../utils/validateUserData.js';
 import bcrypt from 'bcrypt';
 import generateJWT from '../utils/generateJWT.js';
 import formattedDateOfBirth from '../utils/formattedDateOfBirth.js';
+import paginations from '../utils/paginations.js';
 
 class UserController {
     async createUser(req, res, next) {
@@ -104,7 +105,8 @@ class UserController {
 
     async getUser(req, res, next) {
         try {
-            const user = await User.find({});
+            let page = req.query.page;
+            const user = await paginations(User, page, 4);
 
             return res.json(user);
         } catch (error) {
@@ -198,7 +200,7 @@ class UserController {
                 isAdmin: dataUser?.isAdmin,
             });
 
-            const new_access_token = tokens.access_token;
+            const new_access_token = tokens.refresh_token; // Check lại ở đây
             res.status(200).json({
                 message: 'Refresh token thành công',
                 new_access_token,
