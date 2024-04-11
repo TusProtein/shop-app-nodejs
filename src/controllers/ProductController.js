@@ -89,10 +89,62 @@ class ProductController {
 
     async getAllProducts(req, res, next) {
         try {
-            const { page, sort, type } = req.query;
-            if (sort) {
-                const products = await sortable(Product, sort, type);
-                return res.json(products);
+            const { page, sort, type, filter } = req.query;
+            if (sort && type) {
+                const validSortFields = ['name', 'price', 'rating'];
+                const validSortType = ['asc', 'desc'];
+
+                if (!validSortFields.includes(sort)) {
+                    return res
+                        .status(400)
+                        .json({ message: 'Invalid sort field' });
+                }
+
+                if (!validSortType.includes(type)) {
+                    return res
+                        .status(400)
+                        .json({ message: 'Invalid type field' });
+                }
+
+                const sortedProducts = await sortable(Product, sort, type);
+                const sortedAndPaginated = await paginations(
+                    sortedProducts,
+                    page,
+                    8,
+                    false
+                );
+                return res.json(sortedAndPaginated);
+            }
+            if (filter) {
+                let filteredProducts;
+                if (filter[0] === 'price') {
+                    const priceRange = Number(filter[1]);
+                    filteredProducts = await Product.find({
+                        price: {
+                            $gte: 0,
+                            $lte: priceRange,
+                        },
+                    });
+                } else {
+                    const regexFilter = new RegExp(filter[1], 'i'); // 'i' cho phép tìm kiếm không phân biệt chữ hoa chữ thường
+
+                    filteredProducts = await Product.find({
+                        [filter[0]]: regexFilter,
+                    });
+                }
+
+                if (filteredProducts.length === 0) {
+                    return res.status(404).json({
+                        message: 'Không có sản phẩm nào',
+                    });
+                }
+                const filteredAndPaginated = await paginations(
+                    filteredProducts,
+                    page,
+                    4,
+                    false
+                );
+                return res.json(filteredAndPaginated);
             }
             if (page) {
                 const products = await paginations(Product, page, 8);

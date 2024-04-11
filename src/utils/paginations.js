@@ -1,7 +1,8 @@
 const paginations = async (
-    models,
-    page,
+    data,
+    page = 1,
     PAGE_SIZE = 4,
+    isFromDatabase = true,
     includeDeleted = false
 ) => {
     try {
@@ -11,24 +12,25 @@ const paginations = async (
 
         const skipPage = (page - 1) * PAGE_SIZE;
 
-        const query = includeDeleted
-            ? models.findWithDeleted({ deleted: true })
-            : models.find({});
+        if (isFromDatabase) {
+            const query = includeDeleted
+                ? data.findWithDeleted({ deleted: true })
+                : data.find({});
 
-        // const [data, total] = await Promise.all([
-        //     query.skip(skipPage).limit(PAGE_SIZE),
-        //     models.countDocumentsWithDeleted(
-        //         includeDeleted ? { deleted: true } : { deleted: { $ne: true } }
-        //     ),
-        // ]);
+            const [dataObj, total] = await Promise.all([
+                query.skip(skipPage).limit(PAGE_SIZE),
+                data.countDocuments(),
+            ]);
 
-        const [data, total] = await Promise.all([
-            query.skip(skipPage).limit(PAGE_SIZE),
-            models.countDocuments(),
-        ]);
+            const totalPage = Math.ceil(total / PAGE_SIZE);
+            return { dataObj, totalPage };
+        } else {
+            const result = data.slice(skipPage, skipPage + PAGE_SIZE);
+            const total = data.length;
+            const totalPage = Math.ceil(total / PAGE_SIZE);
 
-        const totalPage = Math.ceil(total / PAGE_SIZE);
-        return { data, totalPage };
+            return { dataObj: result, totalPage };
+        }
     } catch (error) {
         console.log(error);
     }
